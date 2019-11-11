@@ -38,11 +38,9 @@ public class GraphService<E> implements Graph<E>{
 	public ArrayList<TaggedVertex<E>> vertexDataWithIncomingCounts() {
 		
 		ArrayList<TaggedVertex<E>> list = new ArrayList<TaggedVertex<E>>();
-		int count = 0;
 		for(E vertex: vertexList) {
 			
-			TaggedVertex taggedVertex = new TaggedVertex(vertex, getIncoming(count).size());
-			count++;
+			TaggedVertex taggedVertex = new TaggedVertex(vertex, getIncoming(vertexList.indexOf(vertex)).size());
 			list.add(taggedVertex);
 		}
 		return list;
