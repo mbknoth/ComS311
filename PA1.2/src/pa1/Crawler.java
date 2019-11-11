@@ -98,6 +98,7 @@ public class Crawler
 							graph.addVertex(v);
 							graph.addEdge(currentPage, v);
 							if(graph.vertexData().size() >= maxPages) {
+								graph.vertexDataWithIncomingCounts();
 								return graph;
 							}
 							discovered.put(v, true);
@@ -116,7 +117,7 @@ public class Crawler
 		catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.println(graph.vertexDataWithIncomingCounts());
+		graph.vertexDataWithIncomingCounts();
 		return graph;
 	}
 }

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import api.Graph;
+import api.TaggedVertex;
 
 public class GraphService<E> implements Graph<E>{
 	
@@ -34,23 +35,17 @@ public class GraphService<E> implements Graph<E>{
 	}
 
 	@Override
-	public ArrayList vertexDataWithIncomingCounts() {
-		int in[] = new int[adjList.size()];
-		ArrayList<Integer> list = new ArrayList<Integer>();
-  
-        for (int i = 0; i < adjList.size(); i++) { 
-  
-            list = (ArrayList<Integer>) adjList.get(i); 
-  
-            // Out degree for ith vertex will be the count 
-            // of direct paths from i to other vertices 
-            for (int j = 0; j < list.size(); j++) 
-  
-                // Every vertex that has an incoming  
-                // edge from i 
-                in[list.get(j)]++; 
-        } 
-        return list;
+	public ArrayList<TaggedVertex<E>> vertexDataWithIncomingCounts() {
+		
+		ArrayList<TaggedVertex<E>> list = new ArrayList<TaggedVertex<E>>();
+		int count = 0;
+		for(E vertex: vertexList) {
+			
+			TaggedVertex taggedVertex = new TaggedVertex(vertex, getIncoming(count).size());
+			count++;
+			list.add(taggedVertex);
+		}
+		return list;
 	}
 
 	@Override
