@@ -1,39 +1,46 @@
 package pa1;
 
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.Map;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.UnsupportedMimeTypeException;
-import org.jsoup.HttpStatusException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import api.Util;
 import api.Graph;
+import pa1.GraphService;
+import api.Util;
 
 /**
  * Implementation of a basic web crawler that creates a graph of some
  * portion of the world wide web.
  *
- * @author PLEASE FILL IN TEAM MEMBER NAMES HERE
+ * @author Matthew Smith and Mitchell Knoth
  */
 public class Crawler
 {
-	String seedUrl;
-	int maxDepth, maxPages;
-
 	/**
 	 * Constructs a Crawler that will start with the given seed url, including
 	 * only up to maxPages pages at distance up to maxDepth from the seed url.
 	 * @param seedUrl
 	 * @param maxDepth
 	 * @param maxPages
+	 * @throws IOException 
 	 */
+
+	private String seedUrl;
+	private int maxDepth;
+	private int maxPages;
+
 	public Crawler(String seedUrl, int maxDepth, int maxPages)
 	{
 		this.seedUrl = seedUrl;
@@ -47,37 +54,69 @@ public class Crawler
 	 * implied by maxDepth and maxPages.  
 	 * @return
 	 *   an instance of Graph representing this portion of the web
+	 * @throws IOException 
 	 */
-	public Graph<String> crawl()
+	public Graph<String> crawl() throws IOException
 	{
+
 		Queue<String> queue = new PriorityQueue<String>();
-		List<Boolean> discovered = new ArrayList<Boolean>();
-
-		queue.add(seedUrl);
-
+		Map<String, Boolean> discovered = new HashMap<String, Boolean>();
+		GraphService<String> graph = new GraphService<String>();
+		Map<String, Integer> distance = new HashMap<String, Integer>();
+		int layer = 0;
+	
+		distance.put(this.seedUrl, layer);
+		queue.add(this.seedUrl);
+		graph.addVertex(this.seedUrl);
+		discovered.put(seedUrl, true);
+		
 		System.out.println("Fetching " + this.seedUrl);
-		Document doc;
+	
 		try {
-			doc = Jsoup.connect(this.seedUrl).get();
-			Elements links = doc.select("a[href]");
-			for(Element link: links){
-				String v = link.attr("abs:href");
-				System.out.println("Found " + v);
+			while(!queue.isEmpty()) {
 
-				Document temp = null;
-				if(!Util.ignoreLink(this.seedUrl, v)) {
-
+				String currentPage = queue.remove();
+				Document doc = Jsoup.connect(currentPage).get();
+				Elements links = doc.select("a[href]");
+				layer++;
+				if(layer > maxDepth) {
+					break;
 				}
+				for(Element link: links){
+					
+					String v = link.attr("abs:href");
+					System.out.println("Found " + v);
+					Document temp = null;
+					discovered.put(v, false);
+					
+					if(!Util.ignoreLink(currentPage, v) && (!discovered.get(v))) {
+						
+						try {
+							temp = Jsoup.connect(v).get();
+							queue.add(v);
+							distance.put(v, layer);
+							graph.addVertex(v);
+							graph.addEdge(currentPage, v);
+							if(graph.vertexData().size() >= maxPages) {
+								return graph;
+							}
+							discovered.put(v, true);
+							
+						}catch (UnsupportedMimeTypeException e){
+							e.printStackTrace();
 
-			
-
-				return null;
-
+						}catch (HttpStatusException  e)
+						{
+							e.printStackTrace();
+						}
+					}
+				}
 			}
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+		System.out.println(graph.vertexDataWithIncomingCounts());
+		return graph;
 	}
 }
-
