@@ -1,11 +1,8 @@
 package pa1;
 
-import java.util.List;
 import java.util.Map;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
@@ -64,6 +61,8 @@ public class Crawler
 		GraphService<String> graph = new GraphService<String>();
 		Map<String, Integer> distance = new HashMap<String, Integer>();
 		int layer = 0;
+		int count = 0;
+		int count2 = 0;
 	
 		distance.put(this.seedUrl, layer);
 		queue.add(this.seedUrl);
@@ -77,6 +76,17 @@ public class Crawler
 
 				String currentPage = queue.remove();
 				Document doc = Jsoup.connect(currentPage).get();
+				if(doc == null) {
+					throw new NullPointerException("Connecting to url returned a null value");
+				}
+				count++;
+				if(count % 50 == 0) {
+					try {
+						Thread.sleep(3000);
+					}catch(InterruptedException ignore) {
+						
+					}
+				}
 				Elements links = doc.select("a[href]");
 				if(layer >= maxDepth) {
 					break;
@@ -95,6 +105,18 @@ public class Crawler
 						
 						try {
 							temp = Jsoup.connect(v).get();
+							if(temp == null) {
+								throw new NullPointerException("Connecting to url returned a null value");
+							}
+							count2++;
+							if(count2 % 50 == 0) {
+								try {
+									Thread.sleep(3000);
+								}catch(InterruptedException ignore) {
+									
+								}
+							}
+							
 							queue.add(v);
 							distance.put(v, layer);
 							graph.addVertex(v);

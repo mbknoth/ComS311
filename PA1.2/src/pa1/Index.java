@@ -25,18 +25,23 @@ public class Index
 	 * tag value for each url is the indegree of the corresponding
 	 * node in the graph to be indexed.
 	 * @param urls
-	 *   information about graph to be indexed
-	 * @throws IOException 
+	 *   information about graph to be indexed 
 	 */
-	public Index(List<TaggedVertex<String>> urls) throws IOException
+	public Index(List<TaggedVertex<String>> urls)
 	{
 		this.urls = urls;
 	}
+	
+	/**
+	 * Updates our word count for our inverted index. If we grab the word and 
+	 * it hasn't been added yet, add it to the index. If it is a word we've seen 
+	 * then update the number of times we have seen it.
+	 * @param word
+	 * @param url
+	 */
 
 	public void updateWordCount(String word, String url) {
 		List<TaggedVertex<String>> urlAndCountList = invertedIndex.get(word);
-		
-		
 
 		if(urlAndCountList == null) {
 			urlAndCountList = new ArrayList<TaggedVertex<String>>();
@@ -65,11 +70,23 @@ public class Index
 	public void makeIndex()
 	{
 		invertedIndex = new HashMap<String, List<TaggedVertex<String>>>();
+		int count = 0;
 
 		for(TaggedVertex<String> url: urls) {
 			String doc;
 			try {
 				doc = Jsoup.connect(url.getVertexData().toString()).get().body().text();
+				if(doc == null) {
+					throw new NullPointerException("Connecting to url returned a null value");
+				}
+				count++;
+				if(count % 50 == 0) {
+					try {
+						Thread.sleep(3000);
+					}catch(InterruptedException ignore) {
+						
+					}
+				}
 
 				Util.stripPunctuation(doc);
 				Scanner scan = new Scanner(doc);
@@ -120,6 +137,12 @@ public class Index
 		return sortingOfRanks(rankedList);
 	}
 
+	/**
+	 * A selection sort of our ranks. Returns a sorted list from largest to smallest
+	 * of urls based on rank.
+	 * @param list
+	 * @return sorted list
+	 */
 	public List<TaggedVertex<String>> sortingOfRanks(List<TaggedVertex<String>> list){
 
 		for(int i = 0; i < list.size(); i++) {
@@ -196,8 +219,25 @@ public class Index
 	 */
 	public List<TaggedVertex<String>> searchWithOr(String w1, String w2)
 	{
-		// TODO
-		return null;
+		List<TaggedVertex<String>> rankedList1 = new ArrayList<>();
+		List<TaggedVertex<String>> rankedList2 = new ArrayList<>();
+		List<TaggedVertex<String>> resultRankedList = new ArrayList<>();
+		
+		rankedList1 = search(w1);
+		rankedList2 = search(w2);
+		
+		for(int i = 0; i < rankedList1.size(); i++) {
+			for(int j = 0; j < rankedList2.size(); j++) {
+				if(rankedList1.get(i).getVertexData().equals(rankedList2.get(j).getVertexData())) {
+					if(!(rankedList1.get(i).getTagValue() == 0) || !(rankedList2.get(j).getTagValue() == 0)){
+						int resultRank = rankedList1.get(i).getTagValue() + rankedList2.get(j).getTagValue();
+						resultRankedList.add(new TaggedVertex<String>(rankedList1.get(i).getVertexData(), resultRank));
+					}
+				}
+			}
+		}
+		
+		return sortingOfRanks(resultRankedList);
 	}
 
 	/**
@@ -218,7 +258,24 @@ public class Index
 	 */
 	public List<TaggedVertex<String>> searchAndNot(String w1, String w2)
 	{
-		// TODO
-		return null;
+		List<TaggedVertex<String>> rankedList1 = new ArrayList<>();
+		List<TaggedVertex<String>> rankedList2 = new ArrayList<>();
+		List<TaggedVertex<String>> resultRankedList = new ArrayList<>();
+		
+		rankedList1 = search(w1);
+		rankedList2 = search(w2);
+		
+		for(int i = 0; i < rankedList1.size(); i++) {
+			for(int j = 0; j < rankedList2.size(); j++) {
+				if(rankedList1.get(i).getVertexData().equals(rankedList2.get(j).getVertexData())) {
+					if(!(rankedList1.get(i).getTagValue() == 0) && (rankedList2.get(j).getTagValue() == 0)){
+						int resultRank = rankedList1.get(i).getTagValue();
+						resultRankedList.add(new TaggedVertex<String>(rankedList1.get(i).getVertexData(), resultRank));
+					}
+				}
+			}
+		}
+		
+		return sortingOfRanks(resultRankedList);
 	}
 }
