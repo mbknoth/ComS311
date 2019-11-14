@@ -31,15 +31,16 @@ public class Index
 	{
 		this.urls = urls;
 	}
-	
-	/**
-	 * Updates our word count for our inverted index. If we grab the word and 
-	 * it hasn't been added yet, add it to the index. If it is a word we've seen 
-	 * then update the number of times we have seen it.
-	 * @param word
-	 * @param url
-	 */
 
+	/**
+ 	 * This method will find the corresponding word in the inverted index
+	 * and will iterate through the List of TaggedVertexes. Once the correct url is found
+	 * the method will incremement the wordcount stored at that value by one. 
+	 * @param word
+	 *   the word in the inverted index
+	 * @param url
+	 *   the corresponding url for the word
+	 */
 	public void updateWordCount(String word, String url) {
 		List<TaggedVertex<String>> urlAndCountList = invertedIndex.get(word);
 
