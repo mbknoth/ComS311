@@ -33,6 +33,15 @@ public class Index
 		this.urls = urls;
 	}
 
+	/**
+ 	 * This method will find the corresponding word in the inverted index
+	 * and will iterate through the List of TaggedVertexes. Once the correct url is found
+	 * the method will incremement the wordcount stored at that value by one. 
+	 * @param word
+	 *   the word in the inverted index
+	 * @param url
+	 *   the corresponding url for the word
+	 */
 	public void updateWordCount(String word, String url) {
 		List<TaggedVertex<String>> urlAndCountList = invertedIndex.get(word);
 		
@@ -120,6 +129,14 @@ public class Index
 		return sortingOfRanks(rankedList);
 	}
 
+	/**
+	 * Takes in the given array and will sort it using same approach to selection sort.
+	 *
+	 * @param list
+	 * 	List that is in need of sorting in descending order
+	 * @return
+	 * 	an array with the rank value of each element from largest to smallest
+	 */
 	public List<TaggedVertex<String>> sortingOfRanks(List<TaggedVertex<String>> list){
 
 		for(int i = 0; i < list.size(); i++) {
