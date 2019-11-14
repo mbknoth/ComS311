@@ -37,5 +37,4 @@ public class TaggedVertex<E>
   {
     return tagValue;
   }
-
 }

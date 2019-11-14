@@ -56,7 +56,7 @@ public class Crawler
 	 *   an instance of Graph representing this portion of the web
 	 * @throws IOException 
 	 */
-	public Graph<String> crawl() throws IOException
+	public Graph<String> crawl()
 	{
 
 		Queue<String> queue = new PriorityQueue<String>();
@@ -78,18 +78,20 @@ public class Crawler
 				String currentPage = queue.remove();
 				Document doc = Jsoup.connect(currentPage).get();
 				Elements links = doc.select("a[href]");
-				layer++;
-				if(layer > maxDepth) {
+				if(layer >= maxDepth) {
 					break;
 				}
+				layer++;
 				for(Element link: links){
 					
 					String v = link.attr("abs:href");
 					System.out.println("Found " + v);
 					Document temp = null;
-					discovered.put(v, false);
+					if(discovered.containsKey(v)) {
+						continue;
+					}
 					
-					if(!Util.ignoreLink(currentPage, v) && (!discovered.get(v))) {
+					if(!Util.ignoreLink(currentPage, v)) {
 						
 						try {
 							temp = Jsoup.connect(v).get();

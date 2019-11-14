@@ -1,13 +1,13 @@
 package pa1;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-
 import api.TaggedVertex;
 import api.Util;
 
@@ -19,7 +19,7 @@ import api.Util;
 public class Index
 {
 	List<TaggedVertex<String>> urls;
-	HashMap<String, Integer> invertedIndex;
+	HashMap<String, List<TaggedVertex<String>>> invertedIndex;
 	/**
 	 * Constructs an index from the given list of urls.  The
 	 * tag value for each url is the indegree of the corresponding
@@ -30,38 +30,60 @@ public class Index
 	 */
 	public Index(List<TaggedVertex<String>> urls) throws IOException
 	{
-
-		invertedIndex = new HashMap<String, Integer>();
-
-		for(TaggedVertex url: urls) {
-			String doc = Jsoup.connect(url.getVertexData().toString()).get().body().text();
-			Util.stripPunctuation(doc);
-			Scanner scan = new Scanner(doc);
-			while(scan.hasNext()) {
-				String word = scan.next();
-				if(!Util.isStopWord(word)) {
-					if(invertedIndex.containsKey(word)) {
-						int oldValue = getWordCount(word);
-						invertedIndex.replace(word, oldValue++);
-					}else if(!invertedIndex.containsKey(word)) {
-						invertedIndex.put(word, 0);
-					}
-				}
-
-			}
-		}
+		this.urls = urls;
 	}
 
-	private int getWordCount(String word) {
-		return invertedIndex.get(word);
+	public void updateWordCount(String word, String url) {
+		List<TaggedVertex<String>> urlAndCountList = invertedIndex.get(word);
+		
+		
+
+		if(urlAndCountList == null) {
+			urlAndCountList = new ArrayList<TaggedVertex<String>>();
+			TaggedVertex<String> newUrlAndCount = new TaggedVertex<String>(url, 1);
+			urlAndCountList.add(newUrlAndCount);
+			invertedIndex.put(word, urlAndCountList);
+		}
+		else {
+			//for(TaggedVertex<String> urlAndCount : urlAndCountList) {.getVertexData().equals(url)
+			for(int i = 0; i < urlAndCountList.size(); i++) {
+				if(urlAndCountList.get(i).getVertexData().equals(url)) {
+					int oldCount = urlAndCountList.get(i).getTagValue();
+					oldCount++;
+					urlAndCountList.set(i, new TaggedVertex<String>(url.toString(), oldCount));
+					return;
+				}
+			}
+			urlAndCountList.add(new TaggedVertex<String>(url, 1));
+		}
 	}
 
 	/**
 	 * Creates the index.
+	 * @throws IOException 
 	 */
 	public void makeIndex()
 	{
-		// TODO
+		invertedIndex = new HashMap<String, List<TaggedVertex<String>>>();
+
+		for(TaggedVertex<String> url: urls) {
+			String doc;
+			try {
+				doc = Jsoup.connect(url.getVertexData().toString()).get().body().text();
+
+				Util.stripPunctuation(doc);
+				Scanner scan = new Scanner(doc);
+				while(scan.hasNext()) {
+					String word = scan.next();
+					if(!Util.isStopWord(word)) {
+						updateWordCount(word, url.getVertexData());
+					}
+				}
+				scan.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	/**
@@ -78,8 +100,42 @@ public class Index
 	 */
 	public List<TaggedVertex<String>> search(String w)
 	{
-		// TODO
-		return null;
+		List<TaggedVertex<String>> wordList = invertedIndex.get(w);
+		List<TaggedVertex<String>> rankedList = new ArrayList<>();
+				
+		for(TaggedVertex<String> url: wordList) {
+			for(TaggedVertex<String> invertedIndexUrl: urls) {
+				if(url.getVertexData().equals(invertedIndexUrl.getVertexData())) {
+					int rank = url.getTagValue() * invertedIndexUrl.getTagValue();
+					if(rank == 0) {
+						break;
+					}
+					rankedList.add(new TaggedVertex<String>(url.getVertexData(), rank));
+					break;
+				}
+			}
+		}
+		
+		System.out.println(rankedList);
+		return sortingOfRanks(rankedList);
+	}
+
+	public List<TaggedVertex<String>> sortingOfRanks(List<TaggedVertex<String>> list){
+
+		for(int i = 0; i < list.size(); i++) {
+			int pos = i;
+			for(int j = i; j < list.size(); j++) {
+				if(list.get(j).getTagValue() > list.get(pos).getTagValue()) {
+					pos = j;
+				}
+			}
+			
+			TaggedVertex<String> max = list.get(pos);
+			list.set(pos, list.get(i));
+			list.set(i, max);
+		}
+
+		return list;
 	}
 
 
@@ -101,8 +157,25 @@ public class Index
 	 */
 	public List<TaggedVertex<String>> searchWithAnd(String w1, String w2)
 	{
-		// TODO
-		return null;
+		List<TaggedVertex<String>> rankedList1 = new ArrayList<>();
+		List<TaggedVertex<String>> rankedList2 = new ArrayList<>();
+		List<TaggedVertex<String>> resultRankedList = new ArrayList<>();
+		
+		rankedList1 = search(w1);
+		rankedList2 = search(w2);
+		
+		for(int i = 0; i < rankedList1.size(); i++) {
+			for(int j = 0; j < rankedList2.size(); j++) {
+				if(rankedList1.get(i).getVertexData().equals(rankedList2.get(j).getVertexData())) {
+					if(!(rankedList1.get(i).getTagValue() == 0) && !(rankedList2.get(j).getTagValue() == 0)){
+						int resultRank = rankedList1.get(i).getTagValue() + rankedList2.get(j).getTagValue();
+						resultRankedList.add(new TaggedVertex<String>(rankedList1.get(i).getVertexData(), resultRank));
+					}
+				}
+			}
+		}
+		
+		return sortingOfRanks(resultRankedList);
 	}
 
 	/**
